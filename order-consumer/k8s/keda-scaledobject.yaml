@@ -1,0 +1,32 @@
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: order-consumer
+spec:
+  scaleTargetRef:
+    name: order-consumer
+  # 1 et non 0 : à zéro instance, GET /orders ne répondrait plus.
+  minReplicaCount: 1
+  maxReplicaCount: 10
+  pollingInterval: 15
+  cooldownPeriod: 120
+  triggers:
+    - type: rabbitmq
+      metadata:
+        protocol: amqp
+        queueName: orders.created
+        mode: QueueLength
+        # Une instance par tranche de 50 messages en attente
+        value: "50"
+      authenticationRef:
+        name: order-consumer-rabbitmq
+---
+apiVersion: keda.sh/v1alpha1
+kind: TriggerAuthentication
+metadata:
+  name: order-consumer-rabbitmq
+spec:
+  secretTargetRef:
+    - parameter: host
+      name: order-consumer-secrets
+      key: RABBITMQ_AMQP_URL

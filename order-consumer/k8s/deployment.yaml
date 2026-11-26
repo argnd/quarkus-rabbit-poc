@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: order-consumer
+  labels:
+    app: order-consumer
+spec:
+  # Pas de "replicas" : c'est KEDA (keda-scaledobject.yaml) qui fixe le nombre d'instances.
+  selector:
+    matchLabels:
+      app: order-consumer
+  template:
+    metadata:
+      labels:
+        app: order-consumer
+    spec:
+      containers:
+        - name: order-consumer
+          image: registry.example.com/order-consumer:0.1.0
+          ports:
+            - containerPort: 8080
+          env:
+            - name: RABBITMQ_HOST
+              value: rabbitmq.example.svc.cluster.local
+            - name: RABBITMQ_PORT
+              value: "5672"
+          envFrom:
+            - secretRef:
+                name: order-consumer-secrets
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              memory: 512Mi
